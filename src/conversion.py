@@ -134,4 +134,22 @@ def markdown_to_blocks(markdown: str) -> list[str]:
 
 
 def block_to_block_type(block: str) -> BlockType:
-    return BlockType.CODE
+
+    if re.search(r"^#{1,6} ", block):
+        return BlockType.HEADING
+
+    if re.search(r"^```\n.*?\n```$", block):
+        return BlockType.CODE
+
+    lines = block.split("\n")
+
+    if all(line.startswith(">") for line in lines):
+        return BlockType.QUOTE
+
+    if all(line.startswith("- ") for line in lines):
+        return BlockType.UNORDERED_LIST
+
+    if all(line.startswith(f"{index}. ") for index, line in enumerate(lines, start=1)):
+        return BlockType.ORDERED_LIST
+
+    return BlockType.PARAGRAPH

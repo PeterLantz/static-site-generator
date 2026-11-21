@@ -57,6 +57,42 @@ class TestConversion(unittest.TestCase):
         self.assertEqual(blocks[0], "bollocks")
         self.assertEqual(blocks[1], "dumbdumb")
 
+        blocks = markdown_to_blocks("""
+- item one
+- item one one
+- item one one one
+
+1. moo
+2. two
+
+```
+here is some code, tis three
+```
+
+> tis a qoute, tis the 4th
+
+a random paragraph here, to celebrate the number 5
+
+# heading one, or should I say 6?
+
+###### heading two, maybe 7
+
+- whoops
+this is an invalid ordered list
+and is really a paragraph
+and is item 8
+            """)
+
+        self.assertEqual(len(blocks), 8)
+        self.assertEqual(block_to_block_type(blocks[0]), BlockType.UNORDERED_LIST)
+        self.assertEqual(block_to_block_type(blocks[1]), BlockType.ORDERED_LIST)
+        self.assertEqual(block_to_block_type(blocks[2]), BlockType.CODE)
+        self.assertEqual(block_to_block_type(blocks[3]), BlockType.QUOTE)
+        self.assertEqual(block_to_block_type(blocks[4]), BlockType.PARAGRAPH)
+        self.assertEqual(block_to_block_type(blocks[5]), BlockType.HEADING)
+        self.assertEqual(block_to_block_type(blocks[6]), BlockType.HEADING)
+        self.assertEqual(block_to_block_type(blocks[7]), BlockType.PARAGRAPH)
+
 
 if __name__ == "__main__":
     unittest.main()
