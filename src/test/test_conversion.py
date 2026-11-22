@@ -4,6 +4,46 @@ from conversion import *
 
 
 class TestConversion(unittest.TestCase):
+    def test_full_operation(self):
+
+        html = markdown_to_html("""
+```
+this is some code
+whoops
+```
+""")
+        test_against = "<div><code>this is some code\nwhoops</code></div>"
+        self.assertEqual(html, test_against)
+
+        html = markdown_to_html("""
+## text**bold**text
+
+# _italic_text
+
+> famous quote
+>by famous man
+
+
+- one
+- two
+
+1. one
+2. two
+
+```
+some code _whoops_
+darn no formatting
+```
+""")
+        test_against = "<div>"
+        test_against += "<h2>text<b>bold</b>text</h2><h1><i>italic</i>text</h1>"
+        test_against += "<blockquote>famous quote\nby famous man</blockquote>"
+        test_against += "<ul><li>one</li><li>two</li></ul>"
+        test_against += "<ol><li>one</li><li>two</li></ol>"
+        test_against += "<code>some code _whoops_\ndarn no formatting</code>"
+        test_against += "</div>"
+        self.assertEqual(html, test_against)
+
     def test_conversion(self):
         text_nodes = markdown_to_text_nodes("barnicles")
         self.assertEqual(len(text_nodes), 1)
@@ -52,12 +92,12 @@ class TestConversion(unittest.TestCase):
         self.assertEqual(findings[1][1], "https://i.imgur.com/fJRm4Vk.jpeg")
 
     def test_blocks(self):
-        blocks = markdown_to_blocks("\nbollocks\n\n\ndumbdumb\n")
+        blocks = split_markdown_into_blocks("\nbollocks\n\n\ndumbdumb\n")
         self.assertEqual(len(blocks), 2)
         self.assertEqual(blocks[0], "bollocks")
         self.assertEqual(blocks[1], "dumbdumb")
 
-        blocks = markdown_to_blocks("""
+        blocks = split_markdown_into_blocks("""
 - item one
 - item one one
 - item one one one
@@ -84,14 +124,18 @@ and is item 8
             """)
 
         self.assertEqual(len(blocks), 8)
-        self.assertEqual(block_to_block_type(blocks[0]), BlockType.UNORDERED_LIST)
-        self.assertEqual(block_to_block_type(blocks[1]), BlockType.ORDERED_LIST)
-        self.assertEqual(block_to_block_type(blocks[2]), BlockType.CODE)
-        self.assertEqual(block_to_block_type(blocks[3]), BlockType.QUOTE)
-        self.assertEqual(block_to_block_type(blocks[4]), BlockType.PARAGRAPH)
-        self.assertEqual(block_to_block_type(blocks[5]), BlockType.HEADING)
-        self.assertEqual(block_to_block_type(blocks[6]), BlockType.HEADING)
-        self.assertEqual(block_to_block_type(blocks[7]), BlockType.PARAGRAPH)
+        self.assertEqual(
+            block_markdown_to_block_type(blocks[0]), BlockType.UNORDERED_LIST
+        )
+        self.assertEqual(
+            block_markdown_to_block_type(blocks[1]), BlockType.ORDERED_LIST
+        )
+        self.assertEqual(block_markdown_to_block_type(blocks[2]), BlockType.CODE)
+        self.assertEqual(block_markdown_to_block_type(blocks[3]), BlockType.QUOTE)
+        self.assertEqual(block_markdown_to_block_type(blocks[4]), BlockType.PARAGRAPH)
+        self.assertEqual(block_markdown_to_block_type(blocks[5]), BlockType.HEADING)
+        self.assertEqual(block_markdown_to_block_type(blocks[6]), BlockType.HEADING)
+        self.assertEqual(block_markdown_to_block_type(blocks[7]), BlockType.PARAGRAPH)
 
 
 if __name__ == "__main__":

@@ -1,12 +1,76 @@
 import re
+from ast import NodeVisitor
 
 from block_type import BlockType
 from leaf_node import LeafNode
+from src.html_node import HTMLNode
+from src.parent_node import ParentNode
 from text_node import TextNode, TextType
 
 
 def markdown_to_html(markdown: str) -> str:
-    raise NotImplementedError()
+    blocks_text = split_markdown_into_blocks(markdown)
+    children = []
+    for i in blocks_text:
+        children.append(block_markdown_to_html_node(i))
+    node = ParentNode("div", children)
+    return node.to_html()
+
+
+def block_markdown_to_html_node(markdown: str) -> HTMLNode:
+    block_type = block_markdown_to_block_type(markdown)
+
+    node = None
+    match block_type:
+        case BlockType.HEADING:
+            heading_num = len(markdown) - len(markdown.lstrip("#"))
+            markdown = markdown[heading_num + 1 :]
+            node = ParentNode(f"h{heading_num}", markdown_to_leaf_nodes(markdown))
+
+        case BlockType.CODE:
+            markdown = markdown.removeprefix("```\n").removesuffix("\n```")
+            node = LeafNode("code", markdown)
+
+        case BlockType.PARAGRAPH:
+            node = ParentNode("p", markdown_to_leaf_nodes(markdown))
+
+        case BlockType.QUOTE:
+            lines = markdown.splitlines()
+            lines_formatted = []
+            for line in lines:
+                line = line.removeprefix(">")
+                line = line.removeprefix(" ")
+                lines_formatted.append(line)
+            markdown = "\n".join(lines_formatted)
+            node = ParentNode("blockquote", markdown_to_leaf_nodes(markdown))
+
+        case BlockType.ORDERED_LIST:
+            lines = markdown.splitlines()
+            list_nodes = []
+            for line in lines:
+                line = line[3:]
+                list_nodes.append(ParentNode("li", markdown_to_leaf_nodes(line)))
+            node = ParentNode("ol", list_nodes)
+
+        case BlockType.UNORDERED_LIST:
+            lines = markdown.splitlines()
+            list_nodes = []
+            for line in lines:
+                line = line[2:]
+                list_nodes.append(ParentNode("li", markdown_to_leaf_nodes(line)))
+            node = ParentNode("ul", list_nodes)
+
+    if node is not None:
+        return node
+    raise NotImplementedError("Block type has no htlm node conversion written")
+
+
+def markdown_to_leaf_nodes(markdown: str) -> list[HTMLNode]:
+    text_nodes = markdown_to_text_nodes(markdown)
+    nodes = []
+    for i in text_nodes:
+        nodes.append(text_node_to_html_node(i))
+    return nodes
 
 
 def markdown_to_text_nodes(markdown: str) -> list[TextNode]:
@@ -121,7 +185,7 @@ def extract_markdown_links(text: str) -> list[tuple[str, str]]:
     return re.findall(r"\[(.*?)]\((.*?)\)", text)
 
 
-def markdown_to_blocks(markdown: str) -> list[str]:
+def split_markdown_into_blocks(markdown: str) -> list[str]:
     blocks_working = markdown.split("\n\n")
     blocks_final = []
     for i in blocks_working:
@@ -133,12 +197,12 @@ def markdown_to_blocks(markdown: str) -> list[str]:
     return blocks_final
 
 
-def block_to_block_type(block: str) -> BlockType:
-
+def block_markdown_to_block_type(block: str) -> BlockType:
+    block = block.replace("\r\n", "\n")
     if re.search(r"^#{1,6} ", block):
         return BlockType.HEADING
 
-    if re.search(r"^```\n.*?\n```$", block):
+    if re.search(r"^```[^\n]*\n.*?\n```$", block, re.DOTALL):
         return BlockType.CODE
 
     lines = block.split("\n")
