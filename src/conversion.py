@@ -1,10 +1,9 @@
 import re
-from ast import NodeVisitor
 
 from block_type import BlockType
+from html_node import HTMLNode
 from leaf_node import LeafNode
-from src.html_node import HTMLNode
-from src.parent_node import ParentNode
+from parent_node import ParentNode
 from text_node import TextNode, TextType
 
 
