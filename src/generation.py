@@ -4,7 +4,7 @@ import shutil
 from conversion import markdown_to_html
 
 
-def copy_contents_over(source: str, target: str) -> None:
+def copy_contents_over(source: str, target: str, base_path: str | None = None) -> None:
     items = os.listdir(source)
     for i in items:
         item_path = os.path.join(source, i)
@@ -14,7 +14,9 @@ def copy_contents_over(source: str, target: str) -> None:
         if os.path.isfile(item_path):
             if item_path.endswith(".md"):
                 item_target_path = item_target_path.rsplit(".", 1)[0] + ".html"
-                generate_page(item_path, "template.html", item_target_path)
+                generate_page(
+                    item_path, "template.html", item_target_path, base_path=base_path
+                )
             else:
                 shutil.copy(item_path, item_target_path)
 
@@ -22,7 +24,7 @@ def copy_contents_over(source: str, target: str) -> None:
         else:
             if not os.path.exists(item_target_path):
                 os.mkdir(item_target_path)
-            copy_contents_over(item_path, item_target_path)
+            copy_contents_over(item_path, item_target_path, base_path=base_path)
 
 
 def extract_title(markdown: str) -> str:
@@ -33,7 +35,9 @@ def extract_title(markdown: str) -> str:
     return header
 
 
-def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
+def generate_page(
+    from_path: str, template_path: str, dest_path: str, base_path: str | None = None
+) -> None:
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
 
     # collect information
@@ -45,11 +49,13 @@ def generate_page(from_path: str, template_path: str, dest_path: str) -> None:
         template_content = file.read()
 
     # convert it to html
-    page_html = markdown_to_html(from_content)
     page_title = extract_title(from_content)
-    page_html = template_content.replace("{{ Content }}", page_html).replace(
-        "{{ Title }}", page_title
-    )
+    page_html = markdown_to_html(from_content)
+    page_html = template_content.replace("{{ Content }}", page_html)
+    page_html = page_html.replace("{{ Title }}", page_title)
+    if base_path is not None:
+        page_html = page_html.replace('href="/', f'href="{base_path}')
+        page_html = page_html.replace('src="/', f'src="{base_path}')
 
     # write to files
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
